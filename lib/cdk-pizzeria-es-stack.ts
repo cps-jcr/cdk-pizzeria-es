@@ -15,6 +15,8 @@ export class CdkPizzeriaEsStack extends cdk.Stack {
 
     const pendingOrdersQueue = new Queue (this, 'PendingOrdersQueue', {});
 
+    const ordersToSendQueue = new Queue (this, 'OrdersToSendQueue', {});
+
 
     // Functions
 
@@ -44,6 +46,18 @@ export class CdkPizzeriaEsStack extends cdk.Stack {
     prepOrderFunction.addEventSource(new SqsEventSource(pendingOrdersQueue, {
       batchSize: 1
     }))
+
+    const sendOrderFunction = new Function(this, 'SendOrderFunction', {
+      runtime: Runtime.NODEJS_24_X,
+      handler: 'handler.sendOrder',
+      code: Code.fromAsset('lib/functions'),
+      environment: {
+      ORDERS_TO_SEND_QUEUE_URL: ordersToSendQueue.queueUrl,
+      }
+    });
+
+    ordersToSendQueue.grantSendMessages(sendOrderFunction);
+
 
 
     // API Gateway
